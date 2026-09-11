@@ -1,0 +1,37 @@
+# Use a lightweight, secure Python base image
+FROM python:3.11-slim
+
+# Create a non-root user for security
+RUN useradd -m -s /bin/bash agentuser
+
+# Set working directory
+WORKDIR /sandbox
+
+# Install basic utilities if needed (e.g., curl, git)
+# For higher security, you might omit these unless specifically required
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install any standard libraries you want the agent to always have access to
+# E.g., requests, pandas, numpy
+RUN pip install --no-cache-dir \
+    requests \
+    pandas \
+    numpy \
+    matplotlib \
+    duckduckgo-search
+
+# Change ownership of the sandbox directory
+RUN chown -R agentuser:agentuser /sandbox
+
+# Switch to the non-root user
+USER agentuser
+
+# Set environment variables to restrict Python behavior if desired
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Keep the container running to allow multiple exec commands from smolagents
+CMD ["tail", "-f", "/dev/null"]
